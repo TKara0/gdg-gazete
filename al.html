@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#1e160f">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Kehanet Postası · Baskın</title>
+  <meta name="description" content="Kehanet Postası fotoğraf kabininden çıkan hareketli gazete sayfanı kaydet ya da paylaş.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/al.css">
+  <script type="module" src="js/al.js"></script>
+</head>
+<body>
+  <header class="band">
+    <img class="logo" src="assets/gdg-selcuk-logo-renkli.png" width="1700" height="223"
+      alt="Google Developer Groups On Campus Selçuk University">
+  </header>
+
+  <!-- Gazeteden yırtılmış parça: gölge dış kutuda (drop-shadow), yırtık kenar iç kutuda (clip-path) -->
+  <div class="scrap">
+    <main class="sheet">
+      <header class="nameplate">
+        <h1 class="masthead">Kehanet Postası</h1>
+        <p class="kicker">Okur kuponu ile teslim edilmiştir</p>
+      </header>
+
+      <p id="loading" class="loading" role="status">Baskı hazırlanıyor…</p>
+
+      <div id="ready" class="ready" hidden>
+        <figure class="print">
+          <img id="gif" alt="Kehanet Postası gazete sayfası, hareketli fotoğrafınla">
+        </figure>
+        <button id="save" class="stamp save" type="button">Kaydet / Paylaş</button>
+        <p class="tip">Olmazsa görsele basılı tut → Fotoğraflara Ekle</p>
+      </div>
+
+      <div id="problem" class="problem" role="alert" hidden>
+        <p id="problem-title" class="problem-title"></p>
+        <p id="problem-text" class="problem-text"></p>
+        <button id="retry" class="stamp retry" type="button" hidden>Tekrar dene</button>
+      </div>
+
+      <footer class="foot">GDG On Campus Selçuk · Kehanet Postası</footer>
+    </main>
+  </div>
+</body>
+</html>

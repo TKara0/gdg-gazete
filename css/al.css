@@ -1,0 +1,198 @@
+/* Telefon paylaşım sayfası: koyu masa üstünde gazeteden yırtılmış tek bir kâğıt parçası. */
+
+:root {
+  --desk: #120d09;
+  --desk-2: #2a2018;
+  --paper: #e7d9b8;
+  --paper-light: #f4ead3;
+  --ink: #1e160f;
+  --ink-faded: #5b4a36;
+  --f-gothic: "Grenze Gotisch", Georgia, serif;
+  --f-display: "Libre Caslon Display", Georgia, serif;
+  --f-text: "Old Standard TT", Georgia, serif;
+  /* Kâğıt dokusu (inline SVG gürültü); yalnızca kâğıt zemininde */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .22 0 0 0 0 .12 -1.6 0 0 0 .9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+[hidden] { display: none !important; }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--desk);
+  background-image: radial-gradient(ellipse 110% 80% at 50% 35%, var(--desk-2), var(--desk) 75%);
+  color: var(--ink);
+  font-family: var(--f-text);
+  font-size: 17px;
+  line-height: 1.45;
+  overflow-x: hidden;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ---------- logo şeridi (kâğıdın üstünde, ayrı) ---------- */
+
+.band {
+  display: flex;
+  justify-content: center;
+  padding: 14px 16px;
+  background: var(--ink);
+}
+
+.logo {
+  display: block;
+  width: min(100%, 300px);
+  height: auto;
+}
+
+/* ---------- yırtık kâğıt ---------- */
+
+.scrap {
+  max-width: 480px;
+  margin: 22px auto 32px;
+  padding: 0 16px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)) drop-shadow(0 16px 26px rgba(0, 0, 0, 0.55));
+}
+
+.sheet {
+  padding: 26px 18px 30px;
+  transform: rotate(-0.8deg); /* boşluk kutusu değil kâğıt döner: köşeler 16px kenar boşluğunda kalır */
+  background-color: var(--paper);
+  background-image: var(--grain), radial-gradient(ellipse 100% 85% at 50% 40%, transparent 55%, rgba(120, 78, 35, 0.2));
+  /* Üst ve alt kenar yırtık, yanlar düz. Sabit değerler (mulberry32, tohum 1847): her açılışta aynı. */
+  clip-path: polygon(0% 4.9px, 2.94% 10px, 5.88% 10.9px, 8.82% 4.2px, 11.76% 6.8px, 14.71% 6.6px, 17.65% 4px, 20.59% 4.4px, 23.53% 6px, 26.47% 6.8px, 29.41% 4.1px, 32.35% 7.5px, 35.29% 4px, 38.24% 5.8px, 41.18% 7.1px, 44.12% 2.9px, 47.06% 3.2px, 50% 5px, 52.94% 5.3px, 55.88% 3.5px, 58.82% 5.8px, 61.76% 4.3px, 64.71% 3.6px, 67.65% 6.1px, 70.59% 6.4px, 73.53% 5.4px, 76.47% 7.6px, 79.41% 5.3px, 82.35% 6.7px, 85.29% 5.6px, 88.24% 4.3px, 91.18% 6.8px, 94.12% 7.5px, 97.06% 5.2px, 100% 4.1px, 100% calc(100% - 5.6px), 97.06% calc(100% - 6.1px), 94.12% calc(100% - 1.5px), 91.18% calc(100% - 8px), 88.24% calc(100% - 7.2px), 85.29% calc(100% - 6.2px), 82.35% calc(100% - 3.8px), 79.41% calc(100% - 6.1px), 76.47% calc(100% - 5.1px), 73.53% calc(100% - 4px), 70.59% calc(100% - 8.2px), 67.65% calc(100% - 8.6px), 64.71% calc(100% - 11.4px), 61.76% calc(100% - 7.8px), 58.82% calc(100% - 8.7px), 55.88% calc(100% - 3.4px), 52.94% calc(100% - 2px), 50% calc(100% - 1.3px), 47.06% calc(100% - 3.9px), 44.12% calc(100% - 9.7px), 41.18% calc(100% - 4.1px), 38.24% calc(100% - 1.3px), 35.29% calc(100% - 9.4px), 32.35% calc(100% - 8.8px), 29.41% calc(100% - 9.5px), 26.47% calc(100% - 4.2px), 23.53% calc(100% - 5.3px), 20.59% calc(100% - 3.2px), 17.65% calc(100% - 7.7px), 14.71% calc(100% - 6.8px), 11.76% calc(100% - 2.1px), 8.82% calc(100% - 4.4px), 5.88% calc(100% - 4.9px), 2.94% calc(100% - 7.4px), 0% calc(100% - 5.5px));
+}
+
+/* ---------- künye ---------- */
+
+.nameplate {
+  padding: 6px 0 7px;
+  border-top: 3px double var(--ink);
+  border-bottom: 3px double var(--ink);
+  text-align: center;
+}
+
+.masthead {
+  margin: 0;
+  font-family: var(--f-gothic);
+  font-weight: 900;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.kicker {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-faded);
+}
+
+/* ---------- içerik ---------- */
+
+.loading {
+  display: grid;
+  place-items: center;
+  margin: 18px 0 0;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--ink);
+  background: var(--paper-light);
+  font-style: italic;
+  color: var(--ink-faded);
+}
+
+.print {
+  margin: 18px 0 18px;
+  padding: 3px;
+  border: 1px solid var(--ink);
+  background: var(--paper-light);
+}
+
+.print img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  background: var(--paper-light);
+}
+
+/* Damga gibi buton: mürekkep zemin, içte 3px boşlukla kâğıt renkli ikinci çerçeve */
+.stamp {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 1px;
+  background: var(--ink);
+  color: var(--paper-light);
+  box-shadow: inset 0 0 0 3px var(--ink), inset 0 0 0 4px var(--paper-light);
+  font-family: var(--f-text);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.stamp:active { transform: translateY(2px); }
+
+.save {
+  padding: 17px 16px 15px;
+  font-size: 17px;
+  letter-spacing: 4px;
+}
+
+.tip {
+  margin: 12px 0 0;
+  font-size: 14px;
+  font-style: italic;
+  text-align: center;
+  color: var(--ink-faded);
+}
+
+.problem {
+  margin: 18px 0 0;
+  padding: 36px 8px 28px;
+  text-align: center;
+}
+
+.problem-title {
+  margin: 0 0 10px;
+  font-family: var(--f-display);
+  font-size: clamp(30px, 10vw, 42px);
+  line-height: 1.1;
+  letter-spacing: 1px;
+}
+
+.problem-text { margin: 0; font-style: italic; color: var(--ink-faded); }
+
+.retry {
+  margin-top: 22px;
+  padding: 14px 16px 12px;
+  font-size: 15px;
+  letter-spacing: 3px;
+}
+
+/* ---------- alt not ---------- */
+
+.foot {
+  margin-top: 22px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ink);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink-faded);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

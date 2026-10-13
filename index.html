@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Kehanet Postası · Fotoğraf Kabini</title>
+  <meta name="description" content="Kameranın karşısına geç, kendini eski bir gazetenin büyülü fotoğrafında gör ve hareketli GIF olarak indir.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <main class="layout">
+    <section class="stage" aria-label="Gazete sayfası">
+      <canvas id="page" class="page" width="600" height="800" role="img"
+        aria-label="Kehanet Postası gazete sayfası. Fotoğraf alanında kameranın canlı, sepya tonlu görüntüsü yer alıyor."></canvas>
+      <video id="video" class="camera-feed" playsinline muted autoplay aria-hidden="true"></video>
+    </section>
+
+    <aside class="panel" aria-label="Kontrol paneli">
+      <header class="panel-head">
+        <img class="panel-logo" src="assets/gdg-selcuk-logo-renkli.png" width="1700" height="223"
+          alt="Google Developer Groups On Campus Selçuk University">
+        <h1 class="brand">Kehanet Postası</h1>
+        <p class="tagline">Fotoğraf kabini · kendini gazetede gör</p>
+      </header>
+
+      <div class="field">
+        <label for="name">Adın (isteğe bağlı)</label>
+        <input id="name" type="text" maxlength="40" autocomplete="off" spellcheck="false" enterkeyhint="go">
+      </div>
+
+      <button id="pose" class="pose" type="button" disabled>
+        <span class="pose-main">POZ VER</span>
+        <span class="pose-sub">ya da boşluk tuşuna bas</span>
+      </button>
+
+      <div class="tools">
+        <button id="another" class="btn" type="button">Başka manşet</button>
+        <button id="open-settings" class="btn" type="button">Ayarlar</button>
+        <button id="fullscreen" class="btn" type="button">Tam ekran</button>
+      </div>
+
+      <div id="cam-error" class="cam-error" role="alert" hidden>
+        <p id="cam-error-text"></p>
+        <button id="cam-retry" class="btn" type="button">Tekrar dene</button>
+      </div>
+
+      <section class="history" aria-labelledby="history-title">
+        <h2 id="history-title" class="history-title">Bu oturumdaki baskılar</h2>
+        <p id="history-empty" class="history-empty">Henüz baskı yok. İlk pozu sen ver.</p>
+        <ul id="history-list" class="history-list"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <p id="status" class="sr-only" aria-live="polite"></p>
+
+  <div id="result" class="result" role="dialog" aria-modal="true" aria-labelledby="result-title" hidden>
+    <div class="result-inner">
+      <figure class="result-figure">
+        <img id="result-img" alt="">
+      </figure>
+      <div class="result-side">
+        <h2 id="result-title" class="result-title">Baskı hazır!</h2>
+        <p id="result-meta" class="result-meta"></p>
+        <a id="result-download" class="download" href="#" download>GIF'i indir</a>
+        <div id="share" class="share" tabindex="-1" hidden>
+          <button id="share-send" class="send" type="button">Telefonuma gönder</button>
+          <!-- Kupon: "Telefonuma gönder" gizlenince görünür; durum, içindeki öğelerin hidden'ından (CSS :has) okunur -->
+          <section class="coupon" aria-label="Telefon kuponu">
+            <svg class="coupon-scissors" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+              <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/>
+              </g>
+            </svg>
+            <p class="coupon-kicker">— Kupon —</p>
+            <p class="coupon-no">No. <span id="coupon-no"></span></p>
+            <h3 class="coupon-title coupon-title-ok">Baskın cebine gelsin</h3>
+            <h3 class="coupon-title coupon-title-error">Kupon basılamadı</h3>
+            <div class="coupon-slot">
+              <div id="share-wait" class="share-wait" hidden>
+                <p class="coupon-printing">Kupon basılıyor…</p>
+                <span class="coupon-dots" aria-hidden="true"></span>
+                <span id="share-wait-text" class="sr-only"></span>
+              </div>
+              <figure id="share-qr" class="share-qr" hidden>
+                <canvas id="share-qr-canvas" width="240" height="240" role="img" aria-label="Telefonla okutulacak QR kod"></canvas>
+                <figcaption>Telefonunun kamerasıyla okut</figcaption>
+              </figure>
+              <div id="share-error" class="share-error" hidden>
+                <p id="share-error-text"></p>
+                <p id="share-error-hint" class="share-error-hint" hidden></p>
+                <button id="share-retry" class="coupon-btn" type="button">Tekrar dene</button>
+              </div>
+            </div>
+            <p id="share-ttl" class="coupon-terms"></p>
+          </section>
+        </div>
+        <div class="result-actions">
+          <button id="result-again" class="btn" type="button">Yeni poz</button>
+          <button id="result-close" class="btn" type="button">Kapat</button>
+        </div>
+        <p id="result-timeout" class="result-timeout" hidden></p>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="settings" class="settings" aria-labelledby="settings-title">
+    <form method="dialog">
+      <header class="settings-head">
+        <h2 id="settings-title">Ayarlar</h2>
+        <button type="button" class="icon-btn" data-action="close" aria-label="Ayarları kapat">×</button>
+      </header>
+
+      <fieldset>
+        <legend>Gazete</legend>
+        <label class="row">Gazetenin adı <input name="title" type="text" maxlength="40"></label>
+        <label class="row">Slogan <input name="slogan" type="text" maxlength="70"></label>
+        <label class="row">Üst başlık <input name="kicker" type="text" maxlength="40"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Manşet ve alt yazı</legend>
+        <label class="row">Manşet modu
+          <select name="headlineMode">
+            <option value="random">Her çekimde rastgele</option>
+            <option value="fixed">Sabit</option>
+          </select>
+        </label>
+        <label class="row">Sabit manşet <input name="fixedHeadline" type="text" maxlength="90"></label>
+        <label class="row">Fotoğraf altı yazısı
+          <input name="caption" type="text" maxlength="120" aria-describedby="caption-hint">
+        </label>
+        <p id="caption-hint" class="hint"><code>{isim}</code> yazan yere ziyaretçinin adı gelir. Ad boşsa “Okurumuz” yazılır.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Çekim</legend>
+        <label class="row">Çekim süresi
+          <select name="duration">
+            <option value="1.5">1,5 sn</option>
+            <option value="2">2 sn</option>
+            <option value="2.5">2,5 sn</option>
+            <option value="3">3 sn</option>
+          </select>
+        </label>
+        <label class="row">GIF genişliği
+          <select name="gifWidth">
+            <option value="360">360 px</option>
+            <option value="480">480 px</option>
+            <option value="600">600 px</option>
+          </select>
+        </label>
+        <label class="row">Kamera <select name="cameraId"></select></label>
+        <label class="check"><input name="pingpong" type="checkbox"> İleri-geri döngü</label>
+        <label class="check"><input name="mirror" type="checkbox"> Ayna görüntüsü</label>
+        <label class="check"><input name="sound" type="checkbox"> Deklanşör sesi</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Telefona gönderme</legend>
+        <p id="share-off" class="hint">Paylaşım yapılandırılmamış (js/config.js)</p>
+        <div id="share-on" hidden>
+          <div id="login-form">
+            <label class="row">Kabin e-postası
+              <input name="loginEmail" type="email" autocomplete="off" spellcheck="false" autocapitalize="off">
+            </label>
+            <label class="row">Şifre <input name="loginPassword" type="password" autocomplete="off"></label>
+            <button type="button" class="btn" data-action="login">Giriş yap</button>
+          </div>
+          <div id="login-done" class="login-done" hidden>
+            <p>Bağlı: <strong id="login-email"></strong></p>
+            <button type="button" class="btn" data-action="logout">Çıkış yap</button>
+          </div>
+          <p id="login-msg" class="login-msg" role="status"></p>
+          <label class="row">Telefona giden GIF
+            <select name="phoneWidth">
+              <option value="360">360 px (hızlı)</option>
+              <option value="480">480 px (net)</option>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <p class="hint">Boş bırakılan alan varsayılana döner.</p>
+
+      <footer class="settings-actions">
+        <button type="button" class="btn" data-action="defaults">Varsayılanlar</button>
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+      </footer>
+    </form>
+  </dialog>
+</body>
+</html>

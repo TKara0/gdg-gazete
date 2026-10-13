@@ -1,0 +1,33 @@
+name: GIF temizliği
+
+on:
+  schedule:
+    - cron: '3-59/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      hepsi:
+        description: "Tüm GIF'leri sil (etkinlik sonu)"
+        type: boolean
+        default: false
+
+concurrency: temizlik
+
+permissions:
+  contents: read
+
+jobs:
+  temizlik:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save @supabase/supabase-js@2.45.4
+      - run: node scripts/temizlik.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          MAX_AGE_MIN: '30'
+          DELETE_ALL: ${{ inputs.hepsi && 'true' || 'false' }}
