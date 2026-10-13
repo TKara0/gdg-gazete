@@ -1,12 +1,5 @@
-// "Telefonuma gönder" yapılandırması. BURAYA DOLDUR:
-//   SUPABASE_URL      → Supabase › Project Settings › API › Project URL (ör. https://abcd1234.supabase.co)
-//   SUPABASE_ANON_KEY → aynı sayfadaki publishable (sb_publishable_…) ya da anon public anahtar
-//   SITE_URL          → sitenin yayındaki adresi, sonda "/" olmadan (ör. https://kullanici.github.io/gazete)
-// Secret / service_role anahtarı ASLA buraya yazılmaz; o yalnızca GitHub Actions secret'ında durur.
-// Alanlar boşsa "Telefonuma gönder" görünmez, kabin eskisi gibi çalışır.
-
-export const SUPABASE_URL = '';
-export const SUPABASE_ANON_KEY = '';
-export const SITE_URL = '';
+export const SUPABASE_URL = 'https://ruvvunckvbvtzxdoanwl.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dnZ1bmNrdmJ2dHp4ZG9hbndsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4ODYxMjUsImV4cCI6MjEwNzQ2MjEyNX0.mkZXZPuquPD64Zh3C2Ejn242b3n7G9JbD70vPUziD44';
+export const SITE_URL = 'https://tkara0.github.io/gdg-gazete';  // sonda / olmadan
 export const BUCKET = 'gifs';
 export const SHARE_TTL_MIN = 30;
