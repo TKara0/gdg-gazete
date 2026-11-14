@@ -4,14 +4,19 @@
 import { SUPABASE_URL, BUCKET, SHARE_TTL_MIN } from './config.js';
 import { isValidId, publicGifUrl } from './share.js';
 
-const FILENAME = 'kehanet-postasi.gif';
+// iPhone/iPad (iPadOS 13+ masaüstü kimliğiyle gelir): <a download> galeriye kaydetmez, paylaşım menüsü gerekir
+const IS_IOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const $ = (id) => document.getElementById(id);
 
 const ui = {
   loading: $('loading'),
   ready: $('ready'),
   gif: $('gif'),
-  save: $('save'),
+  download: $('download'),
+  share: $('share'),
+  tip: $('tip'),
+  iosTip: $('ios-tip'),
   problem: $('problem'),
   problemTitle: $('problem-title'),
   problemText: $('problem-text'),
@@ -84,10 +89,13 @@ async function load(id) {
   }
 
   const gif = new Blob([blob], { type: 'image/gif' });
-  file = new File([gif], FILENAME, { type: 'image/gif' });
+  file = new File([gif], `kehanet-postasi-${id}.gif`, { type: 'image/gif' });
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   objectUrl = URL.createObjectURL(gif);
   ui.gif.src = objectUrl;
+  ui.share.hidden = !canShareFile(); // dosya paylaşımı desteklenmiyorsa "Paylaş" gizlenir
+  ui.tip.hidden = IS_IOS;
+  ui.iosTip.hidden = !IS_IOS;
   ui.loading.hidden = true;
   ui.ready.hidden = false;
 }
@@ -95,15 +103,20 @@ async function load(id) {
 function download() {
   const a = document.createElement('a');
   a.href = objectUrl;
-  a.download = FILENAME;
+  a.download = file.name;
   document.body.append(a);
   a.click();
   a.remove();
 }
 
-async function save() {
+function canShareFile() {
+  return !!(file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] }));
+}
+
+/** Paylaşım menüsünü açar; açılamazsa dosyayı indirir. */
+async function shareFile() {
   if (!file) return;
-  if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+  if (canShareFile()) {
     try {
       await navigator.share({ files: [file] });
       return;
@@ -114,13 +127,21 @@ async function save() {
   download();
 }
 
+// iOS'ta indirme galeriye kaydetmez: "Galeriye indir" paylaşım menüsünü açar ("Resmi Kaydet" orada)
+function saveToGallery() {
+  if (!file) return;
+  if (IS_IOS) shareFile();
+  else download();
+}
+
 const id = location.hash.slice(1);
 if (!isValidId(id)) {
   showProblem('Bu kupon geçersiz.', 'QR kodu kabindeki ekrandan tekrar okut.');
 } else if (!SUPABASE_URL) {
   showProblem('Paylaşım yapılandırılmamış.', 'Kabin görevlisine haber ver.');
 } else {
-  ui.save.addEventListener('click', save);
+  ui.download.addEventListener('click', saveToGallery);
+  ui.share.addEventListener('click', shareFile);
   ui.retry.addEventListener('click', () => load(id));
   load(id);
 }

@@ -25,7 +25,7 @@ export const DEFAULTS = Object.freeze({
   caption: '{isim}, muhabirimizin objektifine poz verirken.',
   duration: 2,
   gifWidth: 480,
-  phoneWidth: 360, // "Telefonuma gönder" GIF'i
+  phoneWidth: 480, // "Telefonuma gönder" GIF'i
   cameraId: '',
   pingpong: true,
   mirror: true,

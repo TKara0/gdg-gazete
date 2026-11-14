@@ -76,14 +76,14 @@ Ek özellikler: "Başka manşet" (rastgele manşet değiştirir), tam ekran, otu
 - Çekim doğrudan **GIF ölçeğinde** yapılır (arşiv GIF'i varsayılan 480 px genişlik; seçenekler 360 / 480 / 600).
 - `gif-worker.js`: tek global palet (tam sayfa ilk kare + orta fotoğraf karesi + logo bölgesi 4 kez, logo renkleri bozulmasın diye). İlk kare tam sayfa, sonraki kareler yalnızca fotoğraf bölgesi (`x, y` ofsetli, `dispose: 1`) → dosya küçülür. Ping-pong'da aynı kare iki kez indekslenmez.
 - Tek işçi sayfa açılışında oluşturulur, işler sırayla (`gifQueue`) çalışır; işçi ölürse sonraki işte yeniden oluşturulur. Hatalar Türkçe kullanıcı mesajına çevrilir (çevrimdışıyken işçi yüklenemezse farklı mesaj).
-- **Telefon GIF'i** (varsayılan 360 px, ~1,3 MB; 480 px ~2,3 MB) aynı karelerden ölçeklenerek, statik katman o genişlikte yeniden çizilerek üretilir. Arşiv GIF'i biter bitmez arka planda başlar; sonuç ekranı gecikmez. Başarısız olursa kareler duruyorsa "Tekrar dene" yeniden üretir.
+- **Telefon GIF'i** (varsayılan 480 px, ~2,3 MB; 360 px ~1,3 MB) arşiv GIF'iyle aynı genişlikteyse (varsayılanlarda öyle) aynı dosya kullanılır; farklıysa aynı karelerden ölçeklenerek, statik katman o genişlikte yeniden çizilerek üretilir. Arşiv GIF'i biter bitmez arka planda başlar; sonuç ekranı gecikmez. Başarısız olursa kareler duruyorsa "Tekrar dene" yeniden üretir.
 - Dosya adı: `kehanet-postasi-{ad-slug}-{SSDDss}.gif` (Türkçe karakterler sadeleştirilir).
 
 ### Paylaşım ("Telefonuma gönder")
 1. **Kabin girişi:** Ayarlar → Telefona gönderme bölümünde Supabase e-posta/şifre ile giriş. Şifre saklanmaz; oturumu supabase-js tutar.
 2. **Yükleme:** `share.js`, GIF'i `{id}.gif` adıyla `gifs` bucket'ına yükler. ID 10 karakterdir; alfabe `23456789abcdefghjkmnpqrstuvwxyz` (karışan karakterler yok), `crypto.getRandomValues` ile ve mod yanlılığı olmadan üretilir. 409 çakışmada bir kez yeni ID denenir.
 3. **QR:** ID ve link yüklemeden önce üretilir, QR hemen çizilir; yükleme arka planda sürer ("Yükleniyor…" → "Hazır"). `qrcode-generator` ile SVG (hata düzeltme L, 4 modül kenar boşluğu, beyaz zemin, siyah modüller). Bağlantı: `{SITE_URL}/al.html#{id}`.
-4. **Telefon:** `al.html` + `al.js`, Supabase kütüphanesi yüklemeden ID'yi `location.hash`'ten alır ve `fetch` ile public URL'den GIF'i çeker; yükleme bitmediyse 404/400 için 1 sn arayla en fazla 15 kez tekrar dener ("Fotoğrafın geliyor…"); Web Share API (dosya paylaşımı) varsa onu, yoksa indirmeyi kullanır. Dosya silinmişse "BASKI TÜKENDİ" gösterilir.
+4. **Telefon:** `al.html` + `al.js`, Supabase kütüphanesi yüklemeden ID'yi `location.hash`'ten alır ve `fetch` ile public URL'den GIF'i çeker; yükleme bitmediyse 404/400 için 1 sn arayla en fazla 15 kez tekrar dener ("Fotoğrafın geliyor…"); iki buton sunar: "Galeriye indir" (`<a download>`; iOS'ta paylaşım menüsünü açar, orada "Resmi Kaydet" var) ve "Paylaş" (Web Share API; dosya paylaşımı desteklenmiyorsa gizlenir). Dosya silinmişse "BASKI TÜKENDİ" gösterilir.
 5. **Yeniden kullanım:** Aynı çekim ikinci kez yüklenmez; silinmesine 5 dk'dan az kaldıysa yeniden yüklenir.
 6. Paylaşım yapılandırılmamışsa (`js/config.js` boş) buton hiç görünmez, kabin normal çalışır. Supabase ve QR kütüphaneleri yalnızca paylaşım açıksa yüklenir.
 
@@ -112,7 +112,7 @@ Ayarlar `localStorage`'da (`kehanet-kabin-ayarlar`) tutulur; geçersiz/eksik ala
 | Fotoğraf altı yazısı | `{isim}, muhabirimizin objektifine poz verirken.` | metin (120), `{isim}` yer tutucu |
 | Çekim süresi | 2 sn | 1,5 / 2 / 2,5 / 3 |
 | GIF genişliği | 480 px | 360 / 480 / 600 |
-| Telefona giden GIF | 360 px | 360 / 480 |
+| Telefona giden GIF | 480 px | 360 / 480 |
 | İleri-geri döngü | açık | |
 | Ayna görüntüsü | açık | |
 | Deklanşör sesi | açık | |

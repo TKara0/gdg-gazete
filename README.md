@@ -36,7 +36,7 @@ Tarayıcılar `navigator.mediaDevices.getUserMedia` API'sini yalnızca **güvenl
 
 ## Paylaşım kurulumu ("Telefonuma gönder")
 
-Sonuç ekranındaki **Telefonuma gönder** butonu GIF'in telefon sürümünü (varsayılan 360 px) Supabase Storage'a yükler ve bir QR gösterir. Ziyaretçi QR'ı okutunca `al.html` açılır ve GIF'i oradan kaydeder ya da paylaşır. Dosyalar GitHub Actions ile 30 dakika sonra silinir. `js/config.js` boşsa buton görünmez ve kabin eskisi gibi çalışır.
+Sonuç ekranındaki **Telefonuma gönder** butonu GIF'in telefon sürümünü (varsayılan 480 px) Supabase Storage'a yükler ve bir QR gösterir. Ziyaretçi QR'ı okutunca `al.html` açılır ve GIF'i oradan kaydeder ya da paylaşır. Dosyalar GitHub Actions ile 30 dakika sonra silinir. `js/config.js` boşsa buton görünmez ve kabin eskisi gibi çalışır.
 
 **1. Supabase** (bir kez). Kurulumun kopyası [`supabase/kurulum.sql`](supabase/kurulum.sql) dosyasındadır:
 - `gifs` bucket'ı: public okuma açık, yalnızca `image/gif`, en fazla 5 MB.

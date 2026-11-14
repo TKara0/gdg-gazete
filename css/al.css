@@ -140,6 +140,8 @@ body {
 
 .stamp:active { transform: translateY(2px); }
 
+.stamp + .stamp { margin-top: 10px; }
+
 .save {
   padding: 17px 16px 15px;
   font-size: 17px;
