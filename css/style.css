@@ -492,20 +492,32 @@ button:disabled {
   margin: 0;
 }
 
-/* drawQr'ın satır içi boyutu kupona göre sabitlenir; modüller keskin kalır */
-.share-qr canvas {
-  display: block;
-  box-sizing: content-box;
-  width: 232px !important;
-  height: 232px !important;
+/* QR: beyaz zemin, saf siyah; filtre, saydamlık, karışım ya da doku yok */
+.share-qr-img {
+  width: 260px;
+  max-width: 100%;
+  background: #fff;
   border: 1px solid var(--ink);
-  image-rendering: pixelated;
+}
+
+.share-qr-img svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  shape-rendering: crispEdges;
 }
 
 .share-qr figcaption {
   margin-top: 8px;
   font-size: 15px;
   font-style: italic;
+}
+
+.share-qr-status {
+  margin: 4px 0 0;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
 /* QR hazır: damga gibi basılır */

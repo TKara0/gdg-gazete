@@ -6,10 +6,7 @@ import * as defaultConfig from './config.js';
 export const ID_ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'; // 0/o, 1/l/i gibi karışan karakterler yok
 export const ID_LENGTH = 10;
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // bucket sınırı
-const QR_INK = '#1e160f';
-const QR_PAPER = '#f4ead3';
 const QR_QUIET = 4; // modül cinsinden sessiz bölge
-const QR_CSS_SIZE = 240;
 
 export const REASONS = {
   offline: 'internet bağlantısı yok',
@@ -52,7 +49,7 @@ export function isValidId(k) {
 }
 
 export function shareLink(siteUrl, id) {
-  return `${trimSlash(siteUrl)}/al.html?k=${id}`;
+  return `${trimSlash(siteUrl)}/al.html#${id}`;
 }
 
 export function publicGifUrl(supabaseUrl, bucket, id) {
@@ -105,26 +102,15 @@ export function loginErrorMessage(err) {
 
 // ---------- QR ----------
 
-/** QR'ı canvas'a çizer: koyu mürekkep açık kâğıt üstünde, 4 modül sessiz bölge, hata düzeltme M. */
-export function drawQr(canvas, text, qrcodeLib, { cssSize = QR_CSS_SIZE, dpr = 1 } = {}) {
-  const qr = qrcodeLib(0, 'M');
+/**
+ * QR'ı SVG olarak üretir: beyaz zemin, saf siyah modüller, 4 modül sessiz bölge, hata düzeltme L.
+ * Döndürülen metin kütüphanenin kendi çıktısıdır (yalnızca sayı ve sabit etiketler içerir).
+ */
+export function qrSvg(text, qrcodeLib) {
+  const qr = qrcodeLib(0, 'L');
   qr.addData(text);
   qr.make();
-  const n = qr.getModuleCount();
-  const total = n + QR_QUIET * 2;
-  const cell = Math.max(1, Math.ceil((cssSize * dpr) / total)); // tam sayı piksel: kenarlar keskin kalır
-  canvas.width = canvas.height = total * cell;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = QR_PAPER;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = QR_INK;
-  for (let r = 0; r < n; r++) {
-    for (let c = 0; c < n; c++) {
-      if (qr.isDark(r, c)) ctx.fillRect((c + QR_QUIET) * cell, (r + QR_QUIET) * cell, cell, cell);
-    }
-  }
-  if (canvas.style) canvas.style.width = canvas.style.height = `${(total * cell) / dpr}px`;
-  return { modules: n, size: total * cell };
+  return qr.createSvgTag({ cellSize: 1, margin: QR_QUIET, scalable: true, alt: 'Telefonla okutulacak QR kod' });
 }
 
 // ---------- kütüphane yükleme ----------
@@ -217,8 +203,14 @@ export function createShareService({
     }
   }
 
-  /** GIF'i {id}.gif olarak yükler, telefon linkini döndürür. Hata ShareError olarak fırlar. */
-  async function upload(blob) {
+  /** Yüklemeden önce ID ve telefon linkini üretir; QR bununla hemen çizilir. */
+  function prepare() {
+    const id = makeId();
+    return { id, link: shareLink(config.SITE_URL, id) };
+  }
+
+  /** GIF'i {id}.gif olarak yükler. Hata ShareError olarak fırlar. */
+  async function upload(blob, id) {
     if (!enabled) throw new ShareError('other');
     if (!blob || blob.size > MAX_UPLOAD_BYTES) throw new ShareError('too-large');
     if (!isOnline()) throw new ShareError('offline');
@@ -241,30 +233,28 @@ export function createShareService({
     }
     if (!session) throw new ShareError('auth');
 
-    // 31^10 ihtimalde çakışma neredeyse imkânsız; yine de 409 gelirse bir kez yeni ID ile denenir.
-    for (let attempt = 0; ; attempt++) {
-      const id = makeId();
-      let error;
-      try {
-        ({ error } = await c.storage.from(bucket).upload(`${id}.gif`, file, {
-          contentType: 'image/gif',
-          cacheControl: String(ttlMin * 60),
-          upsert: false,
-        }));
-      } catch (err) {
-        throw classifyUploadError(err, isOnline());
-      }
-      if (!error) return { id, link: shareLink(config.SITE_URL, id) };
-      const status = Number(error.statusCode || error.status || 0);
-      if (status === 409 && attempt === 0) continue;
-      throw classifyUploadError(error, isOnline());
+    // ID QR'a basıldığı için değiştirilemez. 31^10 ihtimalde başkasıyla çakışma neredeyse imkânsız;
+    // 409 (dosya zaten var) çoğunlukla aynı yüklemenin ağ hatasından sonra tekrarıdır, başarı sayılır.
+    let error;
+    try {
+      ({ error } = await c.storage.from(bucket).upload(`${id}.gif`, file, {
+        contentType: 'image/gif',
+        cacheControl: String(ttlMin * 60),
+        upsert: false,
+      }));
+    } catch (err) {
+      throw classifyUploadError(err, isOnline());
     }
+    if (!error) return { id };
+    const status = Number(error.statusCode || error.status || 0);
+    if (status === 409 || /already exists|duplicate/i.test(`${error.error || ''} ${error.message || ''}`)) return { id };
+    throw classifyUploadError(error, isOnline());
   }
 
-  /** QR'ı çizer (QR kütüphanesi gerekirse yüklenir). */
-  async function qr(canvas, text) {
+  /** QR'ı SVG olarak kapsayıcıya basar (QR kütüphanesi gerekirse yüklenir). */
+  async function qr(container, text) {
     const lib = await loadQrcode();
-    return drawQr(canvas, text, lib, { dpr: (typeof window !== 'undefined' && window.devicePixelRatio) || 1 });
+    container.innerHTML = qrSvg(text, lib);
   }
 
   /** Kütüphaneleri önceden yükler, kayıtlı oturumu canlandırır; hata kabini etkilemez. */
@@ -274,5 +264,5 @@ export function createShareService({
     loadQrcode().catch(() => {});
   }
 
-  return { enabled, ttlMin, init, onAuthChange, signIn, signOut, upload, qr };
+  return { enabled, ttlMin, init, onAuthChange, signIn, signOut, prepare, upload, qr };
 }

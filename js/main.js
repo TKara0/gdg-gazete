@@ -8,7 +8,7 @@ import {
   drawCountdown, drawCaptureOverlay, drawFlash, drawEncodingOverlay,
 } from './recorder.js';
 import { loadSettings, loadIssue, saveIssue, pickHeadline, initSettingsDialog } from './settings.js';
-import { createShareService, describeShareError, ShareError } from './share.js';
+import { createShareService, describeShareError, ShareError, REASONS } from './share.js';
 
 const PREVIEW_GRAIN = 0.12;
 const GIF_GRAIN = 0.07;
@@ -72,7 +72,8 @@ function init() {
     shareWait: $('share-wait'),
     shareWaitText: $('share-wait-text'),
     shareQr: $('share-qr'),
-    shareQrCanvas: $('share-qr-canvas'),
+    shareQrImg: $('share-qr-img'),
+    shareQrStatus: $('share-qr-status'),
     shareTtl: $('share-ttl'),
     couponNo: $('coupon-no'),
     shareError: $('share-error'),
@@ -383,7 +384,8 @@ function init() {
       phone: null, // Promise<Blob>: telefon GIF'i
       phoneFailed: false,
       phoneSource: null, // telefon GIF'inin kareleri; sonuç ekranı kapanınca bırakılır
-      upload: null, // Promise<{ id, link }>: aynı çekim ikinci kez yüklenmez
+      shareInfo: null, // { id, link }: QR'a basılan ID ve link; yükleme bitmeden üretilir
+      upload: null, // Promise<{ id }>: aynı çekim ikinci kez yüklenmez
       uploadedAt: 0,
     };
     if (phoneFrames) {
@@ -602,8 +604,8 @@ function init() {
     ui.shareWait.hidden = true;
     ui.shareQr.hidden = true;
     ui.shareError.hidden = true;
-    const c = ui.shareQrCanvas;
-    c.getContext('2d').clearRect(0, 0, c.width, c.height);
+    ui.shareQrImg.replaceChildren();
+    ui.shareQrStatus.textContent = 'Yükleniyor…';
   }
 
   function setShareView(view) {
@@ -616,13 +618,24 @@ function init() {
     if (focused && !document.activeElement.getClientRects().length) ui.share.focus();
   }
 
-  /** Aynı çekimin yüklemesi tekrar kullanılır; silinmek üzereyse yeniden yüklenir. */
-  function uploadEntry(entry) {
+  /**
+   * Çekimin ID'si ve linki. Yükleme beklenmeden üretilir; aynı çekimde aynı kalır (QR okutulmuş olabilir).
+   * Yüklenen dosyanın silinmesine az kaldıysa yeni ID üretilir ve yeniden yüklenir.
+   */
+  function shareInfoFor(entry) {
     const fresh = Date.now() - entry.uploadedAt < share.ttlMin * 60000 - SHARE_REUSE_MARGIN_MS;
-    if (entry.upload && (!entry.uploadedAt || fresh)) return entry.upload;
+    if (entry.shareInfo && (!entry.uploadedAt || fresh)) return entry.shareInfo;
     entry.uploadedAt = 0;
+    entry.upload = null;
+    entry.shareInfo = share.prepare();
+    return entry.shareInfo;
+  }
+
+  /** Telefon GIF'i hazır olunca yükler; süren ya da biten yükleme tekrar kullanılır. */
+  function uploadEntry(entry, info) {
+    if (entry.upload) return entry.upload;
     const upload = entry.phone.then(
-      (blob) => share.upload(blob),
+      (blob) => share.upload(blob, info.id),
       (err) => {
         throw new ShareError(navigator.onLine === false ? 'offline' : 'other', err);
       },
@@ -645,32 +658,32 @@ function init() {
     const token = ++state.shareToken;
     const alive = () => token === state.shareToken && state.resultEntry === entry;
     try {
+      const info = shareInfoFor(entry);
+      // QR yüklemeyi ve telefon GIF'ini beklemeden hemen çizilir
       ui.shareWaitText.textContent = 'Hazırlanıyor…';
       setShareView('wait');
-      announce('Hazırlanıyor');
-      if (entry.phoneFailed && entry.phoneSource) startPhoneGif(entry); // önce telefon GIF'ini yeniden üret
-      await entry.phone.catch(() => {});
+      await share.qr(ui.shareQrImg, info.link);
       if (!alive()) return;
-      if (!entry.uploadedAt) {
-        ui.shareWaitText.textContent = 'Yükleniyor…';
-        announce('Yükleniyor');
-      }
-      const { link } = await uploadEntry(entry);
-      if (!alive()) return;
-      await share.qr(ui.shareQrCanvas, link);
-      if (!alive()) return;
+      ui.shareQrStatus.textContent = entry.uploadedAt ? 'Hazır' : 'Yükleniyor…';
       setShareView('qr');
-      announce('QR kod hazır. Telefon kameranla okut.');
+      announce(entry.uploadedAt ? 'QR kod hazır. Telefon kameranla okut.' : 'QR kod hazır. Yükleniyor.');
       // QR göründüğü an otomatik kapanma süresi baştan başlar
       state.lastActivity = performance.now();
       updateResultTimer();
+
+      if (entry.phoneFailed && entry.phoneSource) startPhoneGif(entry, true); // telefon GIF'ini yeniden üret
+      await uploadEntry(entry, info);
+      if (!alive()) return;
+      ui.shareQrStatus.textContent = 'Hazır';
+      announce('Yükleme tamamlandı');
     } catch (err) {
       if (!alive()) return;
       console.warn('Telefona gönderilemedi:', err);
-      const { text, hint } = describeShareError(err);
+      const { reason, hint } = describeShareError(err);
+      const text = 'Yükleme başarısız, tekrar dene.';
       ui.shareErrorText.textContent = text;
-      ui.shareErrorHint.textContent = hint;
-      ui.shareErrorHint.hidden = !hint;
+      ui.shareErrorHint.textContent = `Sebep: ${REASONS[reason]}.${hint ? ` ${hint}` : ''}`;
+      ui.shareErrorHint.hidden = false;
       setShareView('error');
       announce(text);
       if (document.activeElement === ui.share || document.activeElement === document.body) ui.shareRetry.focus();
