@@ -81,6 +81,13 @@ function init() {
     shareErrorHint: $('share-error-hint'),
     shareRetry: $('share-retry'),
     settings: $('settings'),
+    gate: $('gate'),
+    gateForm: $('gate-form'),
+    gateMsg: $('gate-msg'),
+    gateSubmit: $('gate-submit'),
+    gateSkip: $('gate-skip'),
+    shareBadge: $('share-badge'),
+    shareBadgeText: $('share-badge-text'),
   };
 
   const state = {
@@ -101,6 +108,9 @@ function init() {
     resultTimer: 0,
     resultEntry: null,
     shareToken: 0, // sonuç ekranı kapanınca/değişince artar; eski yüklemenin sonucu ekrana basılmaz
+    authKnown: false, // supabase-js ilk oturum durumunu bildirdi mi
+    loggedIn: false, // geçerli kabin oturumu var mı
+    skipLogin: false, // "Telefona göndermeden devam et": yalnızca bu sayfa oturumu için
   };
   state.headline = state.settings.headlineMode === 'fixed' ? state.settings.fixedHeadline : pickHeadline('');
 
@@ -259,6 +269,9 @@ function init() {
     state.dirty = true;
     state.lastActivity = state.phaseStart; // çekim ve sonuç ekranı da kullanım sayılır
     updateControls();
+    // Oturum çekim ya da sonuç ekranı sırasında düştüyse giriş ekranı boşa dönünce çıkar.
+    // Mikro görevde: çekim biter bitmez sonuç ekranı açılıyorsa giriş ekranı hiç görünmez.
+    if (phase === 'idle') queueMicrotask(maybeShowLogin);
   }
 
   function announce(text) {
@@ -690,6 +703,74 @@ function init() {
     }
   }
 
+  // ---------- kabin girişi ----------
+  // Giriş mantığı share.signIn'de (Ayarlar'daki bölümle aynı); burada yalnızca ekran ve durum işareti var.
+
+  function renderShareBadge() {
+    ui.shareBadge.hidden = !share.enabled || !state.authKnown;
+    ui.shareBadge.classList.toggle('is-on', state.loggedIn);
+    ui.shareBadgeText.textContent = state.loggedIn ? 'Paylaşım açık' : 'Paylaşım kapalı';
+  }
+
+  function setGateMessage(text, isError = false) {
+    ui.gateMsg.textContent = text;
+    ui.gateMsg.classList.toggle('is-error', isError);
+  }
+
+  /** Paylaşım açık, oturum yok ve kabin boştaysa giriş ekranını gösterir. */
+  function maybeShowLogin() {
+    if (!share.enabled || !state.authKnown || state.loggedIn || state.skipLogin) return;
+    if (state.phase !== 'idle' || ui.settings.open || ui.gate.open) return;
+    setGateMessage('');
+    ui.gate.showModal();
+  }
+
+  /** Oturum değişince (ilk durum, giriş, çıkış, token tazelenemedi) çağrılır. */
+  function onAuth(user) {
+    state.authKnown = true;
+    state.loggedIn = !!user;
+    if (user) {
+      state.skipLogin = false; // sonradan oturum düşerse yeniden sorulsun
+      if (ui.gate.open) ui.gate.close();
+    }
+    renderShareBadge();
+    maybeShowLogin();
+  }
+
+  ui.gateForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = ui.gateForm.elements.namedItem('gateEmail');
+    const password = ui.gateForm.elements.namedItem('gatePassword');
+    const mail = email.value.trim();
+    if (!mail || !password.value) {
+      setGateMessage('E-posta ve şifreyi yaz.', true);
+      return;
+    }
+    ui.gateSubmit.disabled = true;
+    setGateMessage('Giriş yapılıyor…');
+    try {
+      onAuth(await share.signIn(mail, password.value));
+    } catch (err) {
+      setGateMessage(err.message, true);
+    } finally {
+      password.value = '';
+      ui.gateSubmit.disabled = false;
+    }
+  });
+
+  ui.gateSkip.addEventListener('click', () => {
+    state.skipLogin = true;
+    ui.gate.close();
+  });
+
+  ui.gate.addEventListener('cancel', (e) => e.preventDefault()); // Esc ile kapanmasın
+  ui.gate.addEventListener('close', () => {
+    ui.gateForm.elements.namedItem('gatePassword').value = '';
+    setGateMessage('');
+  });
+  // Ayarlar'dan çıkış yapıldıysa giriş ekranı, Ayarlar kapanınca gelir
+  ui.settings.addEventListener('close', maybeShowLogin);
+
   // ---------- geçmiş ----------
 
   function addHistory(entry) {
@@ -762,7 +843,7 @@ function init() {
   }
 
   document.addEventListener('keydown', (e) => {
-    if (ui.settings.open) return;
+    if (ui.settings.open || ui.gate.open) return;
     if (state.phase === 'result') {
       if (e.key === 'Escape' || e.key === ' ') {
         e.preventDefault();
@@ -817,6 +898,13 @@ function init() {
   requestAnimationFrame(loop);
   startCamera();
   share.init();
+  if (share.enabled) {
+    share.onAuthChange(onAuth).catch(() => {
+      // Kütüphane yüklenemedi: kapalı göster; giriş ekranı nedenini yazar
+      onAuth(null);
+      setGateMessage('Paylaşım kütüphanesi yüklenemedi.', true);
+    });
+  }
 }
 
 init();

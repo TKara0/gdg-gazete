@@ -58,6 +58,27 @@
 
   <p id="status" class="sr-only" aria-live="polite"></p>
 
+  <p id="share-badge" class="share-badge" hidden><span class="share-badge-dot" aria-hidden="true">●</span> <span id="share-badge-text"></span></p>
+
+  <!-- Açılışta kabin girişi (paylaşım yapılandırılmışsa ve oturum yoksa) -->
+  <dialog id="gate" class="settings gate" aria-labelledby="gate-title">
+    <form id="gate-form">
+      <header class="settings-head">
+        <h2 id="gate-title">Kabin girişi</h2>
+      </header>
+      <p class="hint">“Telefonuma gönder” için kabin hesabıyla giriş yap.</p>
+      <label class="row">Kabin e-postası
+        <input name="gateEmail" type="email" autocomplete="username" spellcheck="false" autocapitalize="off">
+      </label>
+      <label class="row">Şifre <input name="gatePassword" type="password" autocomplete="current-password"></label>
+      <p id="gate-msg" class="login-msg" role="status"></p>
+      <footer class="settings-actions">
+        <button type="button" id="gate-skip" class="gate-skip">Telefona göndermeden devam et</button>
+        <button type="submit" id="gate-submit" class="btn btn-primary">Giriş yap</button>
+      </footer>
+    </form>
+  </dialog>
+
   <div id="result" class="result" role="dialog" aria-modal="true" aria-labelledby="result-title" hidden>
     <div class="result-inner">
       <figure class="result-figure">
@@ -169,9 +190,9 @@
         <div id="share-on" hidden>
           <div id="login-form">
             <label class="row">Kabin e-postası
-              <input name="loginEmail" type="email" autocomplete="off" spellcheck="false" autocapitalize="off">
+              <input name="loginEmail" type="email" autocomplete="username" spellcheck="false" autocapitalize="off">
             </label>
-            <label class="row">Şifre <input name="loginPassword" type="password" autocomplete="off"></label>
+            <label class="row">Şifre <input name="loginPassword" type="password" autocomplete="current-password"></label>
             <button type="button" class="btn" data-action="login">Giriş yap</button>
           </div>
           <div id="login-done" class="login-done" hidden>
